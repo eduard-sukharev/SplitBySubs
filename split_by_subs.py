@@ -18,6 +18,8 @@ parser.add_argument('-o', '--out',dest='outdir', action='store', type=str, nargs
                     help='destination directory for clips. Defaults to the movie name + " clips" (or " betweens" for the -b mode)')
 parser.add_argument('-t', '--twitter', action='store_true',
                     help='Convert video to best play on twitter')
+parser.add_argument('-i', '--instagram', action='store_true',
+                    help='Convert and trim video 1:1 aspect ratio for Instagram')
 parser.add_argument('-b', '--between', action='store_true',
                     help='Instead of extracting the dialogue clips, extract the parts between them')
 parser.add_argument('--end-early', dest="endearly", action='store', nargs='?', type=float, default=0.3,
@@ -173,22 +175,32 @@ try:
 		if not args.verbose:
 			cmd.extend(['-hide_banner','-loglevel','panic','-v','quiet'])
 		cmd.extend(['-i', args.movie])
-		if args.subs:
-			subsfilter = 'subtitles='+TMPFILE
-			if args.fontsize:
-				subsfilter = "{}:force_style='Fontsize={}'".format(subsfilter, args.fontsize)
-			cmd.extend(['-vf',subsfilter])
-			
 
-		cmd.extend(['-ss',str(start_secs),'-to',str(end_secs)])
+		videofilter = [];		
+		cmd.extend(['-ss',format(start_secs, 'f'),'-to',format(end_secs, 'f')])
 		if args.twitter:
+			videofilter.append('scale=640:-1')
 			cmd.extend([
 			'-pix_fmt', 'yuv420p', '-vcodec', 'libx264',
-			#'-vf', 'scale=640:-1',
 			'-acodec', 'aac', '-vb', '1024k',
 			'-minrate', '1024k', '-maxrate', '1024k',
 			'-bufsize', '1024k', '-ar', '44100', '-ac', '2', '-strict', 'experimental', '-r', '30',
 		])
+		if args.instagram:
+			videofilter.append('crop=in_h')
+			cmd.extend([
+			'-pix_fmt', 'yuv420p', '-vcodec', 'libx264',
+			'-acodec', 'aac', '-vb', '1024k',
+			'-minrate', '1024k', '-maxrate', '1024k',
+			'-bufsize', '1024k', '-ar', '44100', '-ac', '2', '-strict', 'experimental', '-r', '30',
+		])
+		if args.subs:
+			subsfilter = 'subtitles='+TMPFILE
+			if args.fontsize:
+				subsfilter = "{}:force_style='Fontsize={}'".format(subsfilter, args.fontsize)
+			videofilter.append(subsfilter)
+
+		cmd.extend(['-vf', ','.join(videofilter)])
 		cmd.append(path)
 
 		if args.verbose:
