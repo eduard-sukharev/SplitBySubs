@@ -180,7 +180,7 @@ try:
 			cmd.extend(['-vf',subsfilter])
 			
 
-		cmd.extend(['-ss',str(start_secs),'-to',str(end_secs)])
+		cmd.extend(['-ss',format(start_secs, 'f'),'-to',format(end_secs, 'f')])
 		if args.twitter:
 			cmd.extend([
 			'-pix_fmt', 'yuv420p', '-vcodec', 'libx264',
